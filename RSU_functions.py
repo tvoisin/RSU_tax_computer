@@ -140,15 +140,17 @@ def get_sale_order_from_optionality(sell_event, portfolio,
     for i, event in enumerate(portfolio['available_stock']):
         tax_info = compute_tax_info_from_matched_transaction(sell_event['date'],
                                                              event['date'],
-                                                             selling_price,
+                                                             sell_event[
+                                                               'stock_unit_price_USD'],
                                                              macron_law_id=
                                                              event[
                                                                  'macron_law_id'],
                                                              tax_info_dict=tax_info_dict,
                                                              criteo_stock_dict=criteo_stock_dict,
                                                              exchange_rate_dict=exchange_rate_dict)
+        skip_sale_weight = 10000000 if event.get('skip_sale') else 0            
         score_for_sorting = -np.abs(np.log(selling_price / tax_info[
-            'vesting_price'])) - 100 * (tax_info['rebate'] > 0) -1000 * event.get('amount_already_declared',0)
+            'vesting_price'])) - 100 * (tax_info['rebate'] > 0) -1000 * event.get('amount_already_declared',0) + skip_sale_weight
         sale_tax_info.append({'position': i, 'available_stock': event['amount'],
                               'tax': tax_info['tax'],
                               'score_for_sorting': score_for_sorting})
@@ -243,13 +245,15 @@ def get_sales_result(sell_event, portfolio,
             'vesting_amount_with_moins_value': vested_action_sale[
                                                    'share_sold'] * tax_info[
                                                    'vesting_price_with_moins_value'],
-            'rebate_without_moins_value': vested_action_sale[
+            'rebate_with_moins_value': vested_action_sale[
                                               'share_sold'] *
                                           tax_info[
-                                              'vesting_price'] *
+                                              'vesting_price_with_moins_value'] *
                                           tax_info['rebate'],
             'rebate': tax_info['rebate'],
-            'tax': vested_action_sale['share_sold'] * tax_info['tax']
+            'tax': vested_action_sale['share_sold'] * tax_info['tax'],
+            'macron_law_id': vested_event['macron_law_id']
+
         })
         portfolio['available_stock'][vested_action_sale['position']]['amount'] = \
             portfolio['available_stock'][vested_action_sale['position']][
