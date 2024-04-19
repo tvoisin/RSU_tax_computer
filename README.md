@@ -10,7 +10,7 @@ How to use
 * in a repo, using the comand line (cmd) run git clone https://github.com/tvoisin/RSU_tax_computer.git.
 * From the root of this repo run `jupyter notebook` in the command line
 * Select the file `RSU_tax_computer.ipynb` in your browser
-* You might need to install python dependencies if you have runtime errors (eg: `pip install pandas`)
+* You might need to install python dependencies if you have runtime errors (eg: `pip install -r requirements`)
 * Put your own information for all your vesting (with the vesting date, and the number of shares) and all your sold share with again the date and the amount sold (in shares, not euro).
 * Then just run the notebook and you will have all information to report in the cells at the end.
 
