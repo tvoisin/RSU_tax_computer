@@ -1,4 +1,0 @@
-[tool.ruff]
-extend-include = ["*.ipynb"]
-target-version = 'py311'
-line-length = 120
