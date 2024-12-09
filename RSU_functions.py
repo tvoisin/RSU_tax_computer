@@ -19,23 +19,37 @@ criteo_stock_dict = criteo_stock.set_index('date_dt')['stock_price'].to_dict()
 
 def get_value_on_date(dt, value_dict):
     i = 0
+    log = 'Check your date, no data found for:'
     while (dt.strftime('%d/%m/%Y') not in value_dict.keys()) and (i < 10):
+        formattedDt = dt.strftime('%d/%m/%Y')
+        log += f'{formattedDt}, '
         dt = dt + datetime.timedelta(days=1)
         i += 1
     if i == 10:
-        raise KeyError('check your date, no data in 10 days')
+        raise KeyError(log)
     return value_dict[dt.strftime('%d/%m/%Y')]
 
 
 def get_stock_price_euro(dt, criteo_stock_dict=criteo_stock_dict,
                          exchange_rate_dict=exchange_rate_dict):
     stock_price_usd = get_value_on_date(dt, criteo_stock_dict)
+    if(len(exchange_rate_dict) == 0):
+        raise Exception("No exchange rate list found")
+    if not stock_price_usd:
+        raise Exception(f'No stock price found for {dt}')
     return stock_price_usd / get_value_on_date(dt, exchange_rate_dict)
 
 
 def get_stock_price_euro_from_price_in_USD(dt, stock_price_USD,
                                            exchange_rate_dict=exchange_rate_dict):
-    return stock_price_USD / get_value_on_date(dt, exchange_rate_dict)
+    if not stock_price_USD:
+        raise Exception(f'No stock price found for {dt}')
+    try:
+        return stock_price_USD / get_value_on_date(dt, exchange_rate_dict)
+    except:
+        formattedDt = dt.strftime('%d/%m/%Y')
+        value_on_date = get_value_on_date(dt, exchange_rate_dict)
+        raise Exception(f'Error while converting stock price: {stock_price_USD}({type(stock_price_USD)}) for {dt}, {formattedDt}, {value_on_date}({type(value_on_date)})')
 
 
 def compute_rebate(selling_date_dt, vesting_date_dt, macron_law_id):
@@ -90,6 +104,9 @@ def get_sale_order_greedy(sell_event, portfolio, tax_info_dict=tax_info_dict,
                           exchange_rate_dict=exchange_rate_dict):
     sale_tax_info = []
     for i, event in enumerate(portfolio['available_stock']):
+        if not sell_event['date'] or not event['date'] or not sell_event['stock_unit_price_USD']:
+            return f'error, missing one field among {sell_event} or {event}'
+
         tax_info = compute_tax_info_from_matched_transaction(sell_event['date'],
                                                              event['date'],
                                                              sell_event[
