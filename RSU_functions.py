@@ -16,7 +16,6 @@ criteo_stock['date_dt'] = criteo_stock.Date.apply(
 exchange_rate_dict = taux.set_index('Date')['USD'].to_dict()
 criteo_stock_dict = criteo_stock.set_index('date_dt')['stock_price'].to_dict()
 
-
 def get_value_on_date(dt, value_dict):
     i = 0
     log = 'Check your date, no data found for:'
@@ -86,10 +85,14 @@ def compute_tax_info_from_matched_transaction(selling_date_dt, vesting_date_dt,
                 (1 - rebate) * tax_info_dict['TMI_IR'] + tax_info_dict[
             'cotisation']) + plus_value * tax_info_dict[
                      'flat_tax_plus_value']
-    return {'vesting_price': vesting_price,
+    return {
+            'vesting_price': vesting_price,
             'vesting_price_with_moins_value': vesting_price_with_moins_value,
-            'plus_value': plus_value, 'selling_price': selling_price,
-            'rebate': rebate, 'tax': tax_to_pay}
+            'plus_value': plus_value,
+            'selling_price': selling_price,
+            'rebate': rebate,
+            'tax': tax_to_pay
+           }
 
 
 ############################################################################################
@@ -240,23 +243,26 @@ def get_sales_result(sell_event, portfolio,
         montant_global_516 = tax_info['selling_price'] * vested_action_sale[
             'share_sold']
         # frais separer egalement sur les differentes transactions
+        selling_exchange_price = get_value_on_date(sell_event['date'], exchange_rate_dict)
+        vesting_exchange_price = get_value_on_date(vested_event['date'], exchange_rate_dict)
         frais_de_cession_517 = sell_event[
-                                   'total_fee_dollars'] / get_value_on_date(
-            sell_event['date'], exchange_rate_dict) / nb_sales
+                                   'total_fee_dollars'] / selling_exchange_price / nb_sales
         prix_de_cession_net_518 = montant_global_516 - frais_de_cession_517
         prix_daquisition_global = tax_info['vesting_price'] * \
                                   vested_action_sale[
                                       'share_sold']
         resultat = prix_de_cession_net_518 - prix_daquisition_global
         sale_recap.append({
+            'selling_exchange_price': selling_exchange_price,
+            'vesting_exchange_price': vesting_exchange_price,
             'date de la cession (513)': sell_event['date'],
+            'selling_price_USD': sell_event['stock_unit_price_USD'],
             'valeur unitaire de la cession (514)': tax_info['selling_price'],
             'nombre de titres cedes (515)': vested_action_sale['share_sold'],
             'montant global (516)': montant_global_516,
             'frais de cession (517)': frais_de_cession_517,
             'prix de cession net (518)': prix_de_cession_net_518,
-            'prix ou valeur acquisition unitaire (520)': tax_info[
-                'vesting_price'],
+            'prix ou valeur acquisition unitaire (520)': tax_info['vesting_price'],
             'prix daquisition global (521 et 523)': prix_daquisition_global,
             'resultat': resultat,
             'vesting_amount_with_moins_value': vested_action_sale[
