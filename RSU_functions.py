@@ -3,6 +3,7 @@ import datetime as datetime
 import numpy as np
 import copy
 
+from IPython.display import display_markdown
 from dateutil.relativedelta import relativedelta
 
 tax_info_dict = {'TMI_IR': 0.3, 'cotisation': 0.172, 'flat_tax_plus_value': 0.3}
@@ -98,7 +99,7 @@ def compute_tax_info_from_matched_transaction(selling_date_dt, vesting_date_dt,
 ############################################################################################
 #########################       Matching functions
 ############################################################################################
-# These functions decide which RSU are sold at each sell time. Income tax will differ depending on 
+# These functions decide which RSU are sold at each sell time. Income tax will differ depending on
 # the one used. I recommend the get_sale_order_from_optionality
 
 
@@ -143,13 +144,13 @@ def get_sale_order_from_optionality(sell_event, portfolio,
                                     tax_info_dict=tax_info_dict,
                                     criteo_stock_dict=criteo_stock_dict,
                                     exchange_rate_dict=exchange_rate_dict):
-    # The change of tax rate at the vesting price means our RSU are not a forward with regards to the 
+    # The change of tax rate at the vesting price means our RSU are not a forward with regards to the
     # criteo stock, but a forward + a call option without time limit. It means that it is more interesting to
     # sell the shares whose current price are the farthest from the vesting price, as their optionality is
     # less valuable than those whose vesting price are close to current price.
-    # This version is not the most optimal, but I don't know how to get the optimal without brute force 
+    # This version is not the most optimal, but I don't know how to get the optimal without brute force
     # and I am too lazy to code the brute force.
-    # This version might lead you to pay more tax on your RSU this year than you could, but if you believe finance 
+    # This version might lead you to pay more tax on your RSU this year than you could, but if you believe finance
     # theories, it should be close to the optimal (meaning you should pay less next year and over the two years)
     # I am priorizing stock with rebate to be sold first, and then I take the opportunity the furthest from the stock price
     sale_tax_info = []
@@ -168,7 +169,7 @@ def get_sale_order_from_optionality(sell_event, portfolio,
                                                              tax_info_dict=tax_info_dict,
                                                              criteo_stock_dict=criteo_stock_dict,
                                                              exchange_rate_dict=exchange_rate_dict)
-        skip_sale_weight = 10000000 if event.get('skip_sale') else 0            
+        skip_sale_weight = 10000000 if event.get('skip_sale') else 0
         score_for_sorting = -np.abs(np.log(selling_price / tax_info[
             'vesting_price'])) - 100 * (tax_info['rebate'] > 0) -1000 * event.get('amount_already_declared',0) + skip_sale_weight
         sale_tax_info.append({'position': i, 'available_stock': event['amount'],
@@ -195,7 +196,7 @@ def get_sale_order_from_optionality(sell_event, portfolio,
 def get_sale_order_fifo(sell_event, portfolio, tax_info_dict=tax_info_dict,
                         criteo_stock_dict=criteo_stock_dict,
                         exchange_rate_dict=exchange_rate_dict):
-    # at each sale, sell the first vested stock 
+    # at each sale, sell the first vested stock
 
     remaining_share_to_sell = sell_event['amount']
     sale_order = []
@@ -210,6 +211,54 @@ def get_sale_order_fifo(sell_event, portfolio, tax_info_dict=tax_info_dict,
     if remaining_share_to_sell > 0:
         raise Exception(
             'error, you did not have enough share to sell this amount, please check')
+
+def print_transactions(portfolio, year, gain):
+     recap = ''
+
+     lines = {}
+     lines['00_header'] = [' ']
+     lines['02_titre'] = [ '**(511)** Titre' ]
+     lines['03_sell_date'] = ['**(513)** Date de cession' ]
+     lines['04_sell_value'] = [ '**(514)** Valeur unitaire de cession' ]
+     lines['05_count'] = [ '**(515)** Nombre de titres cédés' ]
+     lines['06_total'] = [ '**(516)** Montant total' ]
+     lines['07_fee'] = [ '**(517)** Frais de cession' ]
+     lines['08_price'] = [ '**(518)** Prix de cession net' ]
+     lines['09_unit_price'] = [ '**(520)** Prix unitaire d\'acquisition' ]
+     lines['10_total'] = [ '**(521 et 523)** Prix d\'acquisition global' ]
+     lines['11_resultat'] = [ '**(524)** Résultat' ]
+
+     for event in portfolio['sale_event_recap']:
+         for ev in event:
+             if ev['date de la cession (513)'].year == year:
+                 if (1 if gain else -1) * ev['resultat'] > 0:
+                     lines['00_header'] += [ 'Sell' ]
+                     lines['02_titre'] += [ 'Criteo actions' ]
+                     lines['03_sell_date'] += [ ev['date de la cession (513)'].strftime('%d/%m/%Y') ]
+                     lines['04_sell_value'] += [ np.round(ev['valeur unitaire de la cession (514)'], 2) ]
+                     lines['05_count'] += [ ev['nombre de titres cedes (515)'] ]
+                     lines['06_total'] += [ int(np.round(ev['montant global (516)'], 0)) ]
+                     lines['07_fee'] += [ np.round(ev['frais de cession (517)'], 2) ]
+                     lines['08_price'] += [ int(np.round(ev['prix de cession net (518)'], 0)) ]
+                     lines['09_unit_price'] += [ np.round(ev['prix ou valeur acquisition unitaire (520)'], 2) ]
+                     lines['10_total'] += [ np.round(ev['prix daquisition global (521 et 523)'], 2) ]
+                     lines['11_resultat'] += [ np.round(ev['resultat'], 2) ]
+
+                     '''
+                     # This is a comment hihihi
+                     print('\n ----------------NOUVELLE TRANSACTION ---------- \n')
+                     for key, value in ev.items():
+                         print(key, value)
+                     '''
+
+     lines['01_divide'] = ['--' for i in lines['00_header']]
+
+     for key, value in sorted(lines.items()):
+         for word in value:
+             recap += (f'| {word} ')
+         recap += '|\n'
+
+     display_markdown(recap, raw=True)
 
 
 ###################################################################################################
