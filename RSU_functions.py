@@ -249,7 +249,7 @@ def get_sales_result(sell_event, portfolio,
                                       'share_sold']
         resultat = prix_de_cession_net_518 - prix_daquisition_global
         sale_recap.append({
-            'date de la cession (513)': sell_event['date'],
+            'date de la cession (512)': sell_event['date'],
             'valeur unitaire de la cession (514)': tax_info['selling_price'],
             'nombre de titres cedes (515)': vested_action_sale['share_sold'],
             'montant global (516)': montant_global_516,
