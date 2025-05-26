@@ -2,6 +2,7 @@ import pandas as pd
 import datetime as datetime
 import numpy as np
 import copy
+from IPython.display import display, HTML
 
 from dateutil.relativedelta import relativedelta
 
@@ -249,7 +250,7 @@ def get_sales_result(sell_event, portfolio,
                                       'share_sold']
         resultat = prix_de_cession_net_518 - prix_daquisition_global
         sale_recap.append({
-            'date de la cession (513)': sell_event['date'],
+            'date de la cession (512)': sell_event['date'],
             'valeur unitaire de la cession (514)': tax_info['selling_price'],
             'nombre de titres cedes (515)': vested_action_sale['share_sold'],
             'montant global (516)': montant_global_516,
@@ -285,3 +286,29 @@ def get_sales_result(sell_event, portfolio,
         if available_stock['amount'] > 0:
             available_stock_after_transaction.append(available_stock)
     return available_stock_after_transaction, sale_recap
+
+
+def copy_print(key, value):
+    match value:
+        case datetime.datetime():
+            val_str = value.strftime('%d/%m/%Y')
+        case float():
+            val_str = f"{value:.2f}"
+        case _:
+            val_str = str(value)
+
+    html = f"""
+    <div style="display: flex; align-items: center; font-family: sans-serif; font-size: 12px; line-height: 1.2; margin: 2px 0;">
+        <span style="min-width: 250px;">{key}</span>
+        <span style="font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 3px; margin-right: 6px;">
+            {val_str}
+        </span>
+        <button onclick="navigator.clipboard.writeText('{val_str}')"
+            style="background: #008cba; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 11px;">
+            📋 Copy
+        </button>
+    </div>
+    """
+    display(HTML(html))
+
+
