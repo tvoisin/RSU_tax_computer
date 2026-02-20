@@ -23,3 +23,7 @@ How to use
 2 - Then fill your data in cell [4], and launch kernel restart and run all in the kernel menu at the top.
 
 Disclaimer: I am no accountant, I did this to help, I hope there are no mistake, but If there is, first I am sorry, but I am not responsible
+
+## Sources
+- CRTO historical quotes are extracted from: https://www.nasdaq.com/market-activity/stocks/crto/historical
+- EUR/USD exchange rate is extracted from: https://webstat.banque-france.fr/fr/catalogue/exr/EXR.D.USD.EUR.SP00.A
